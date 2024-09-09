@@ -203,27 +203,29 @@ def update_naming_series(doc):
 
 
 def delete_from_table(doctype: str, name: str, ignore_doctypes: list[str], doc):
-	if doctype != "DocType" and doctype == name:
-		frappe.db.delete("Singles", {"doctype": name})
-	else:
-		frappe.db.delete(doctype, {"name": name})
-	if doc:
-		child_doctypes = [
-			d.options for d in doc.meta.get_table_fields() if frappe.get_meta(d.options).is_virtual == 0
-		]
+	try:
+		if doctype != "DocType" and doctype == name:
+			frappe.db.delete("Singles", {"doctype": name})
+		else:
+			frappe.db.delete(doctype, {"name": name})
+		if doc:
+			child_doctypes = [
+				d.options for d in doc.meta.get_table_fields() if frappe.get_meta(d.options).is_virtual == 0
+			]
 
-	else:
-		child_doctypes = frappe.get_all(
-			"DocField",
-			fields="options",
-			filters={"fieldtype": ["in", frappe.model.table_fields], "parent": doctype},
-			pluck="options",
-		)
+		else:
+			child_doctypes = frappe.get_all(
+				"DocField",
+				fields="options",
+				filters={"fieldtype": ["in", frappe.model.table_fields], "parent": doctype},
+				pluck="options",
+			)
 
-	child_doctypes_to_delete = set(child_doctypes) - set(ignore_doctypes)
-	for child_doctype in child_doctypes_to_delete:
-		frappe.db.delete(child_doctype, {"parenttype": doctype, "parent": name})
-
+		child_doctypes_to_delete = set(child_doctypes) - set(ignore_doctypes)
+		for child_doctype in child_doctypes_to_delete:
+			frappe.db.delete(child_doctype, {"parenttype": doctype, "parent": name})
+	except Exception:
+		print("Error deleting from table", doctype, name)
 
 def update_flags(doc, flags=None, ignore_permissions=False):
 	if ignore_permissions:
