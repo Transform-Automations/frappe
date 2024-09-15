@@ -445,12 +445,14 @@ def _delete_modules(modules: list[str], dry_run: bool) -> list[str]:
 
 def _delete_linked_documents(module_name: str, doctype_linkfield_map: dict[str, str], dry_run: bool) -> None:
 	"""Deleted all records linked with module def"""
-	for doctype, fieldname in doctype_linkfield_map.items():
-		for record in frappe.get_all(doctype, filters={fieldname: module_name}, pluck="name"):
-			print(f"* removing {doctype} '{record}'...")
-			if not dry_run:
-				frappe.delete_doc(doctype, record, ignore_on_trash=True, force=True)
-
+	try:
+		for doctype, fieldname in doctype_linkfield_map.items():
+			for record in frappe.get_all(doctype, filters={fieldname: module_name}, pluck="name"):
+				print(f"* removing {doctype} '{record}'...")
+				if not dry_run:
+					frappe.delete_doc(doctype, record, ignore_on_trash=True, force=True)
+	except Exception:
+		print("Error while deleting linked documents")
 
 def _get_module_linked_doctype_field_map() -> dict[str, str]:
 	"""Get all the doctypes which have module linked with them.
@@ -482,12 +484,14 @@ def _get_module_linked_doctype_field_map() -> dict[str, str]:
 
 
 def _delete_doctypes(doctypes: list[str], dry_run: bool) -> None:
-	for doctype in set(doctypes):
-		print(f"* dropping Table for '{doctype}'...")
-		if not dry_run:
-			frappe.delete_doc("DocType", doctype, ignore_on_trash=True, force=True)
-			frappe.db.sql_ddl(f"DROP TABLE IF EXISTS `tab{doctype}`")
-
+	try:
+		for doctype in set(doctypes):
+			print(f"* dropping Table for '{doctype}'...")
+			if not dry_run:
+				frappe.delete_doc("DocType", doctype, ignore_on_trash=True, force=True)
+				frappe.db.sql_ddl(f"DROP TABLE IF EXISTS `tab{doctype}`")
+	except Exception:
+		print("Error while deleting doctypes")
 
 def post_install(rebuild_website=False):
 	from frappe.website.utils import clear_website_cache
