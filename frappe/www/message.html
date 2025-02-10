@@ -1,51 +1,57 @@
-{% extends "templates/web.html" %}
-
-{% block title %}{{ title or _("Message") }}{% endblock %}
-
-{% block page_content %}
-<style>
-{% include "templates/styles/card_style.css" %}
-{% if fullpage %}
-header, footer {
-	display: none;
-}
-html, body {
-	background-color: #f5f7fa;
-}
-{% endif %}
-{% if card_width %}
-.page-card {
-	max-width: {{ card_width }}px;
-}
-{% endif %}
-</style>
-<div class='page-card'>
-	<h5 class='page-card-head'>
-		<span class='indicator {{ indicator_color or "blue" }}'>
-			{{ title or _("Message") }}</span>
-	</h5>
-	<div class="page-card-body">
-	{% block message_body %}
-		{% if message %}
-		<p>{{ message }}</p>
-		{% endif %}
-		{% if primary_action %}
-		<div><a href='{{ primary_action or "/" }}' class='btn btn-primary btn-sm btn-block'>
-			{{ primary_label or _("Home") }}</a></div>
-		{% endif %}
-	{% endblock %}
-	</div>
-</div>
-{% if error_code %}
-<p class='text-muted text-center small' style='margin-top: -20px;'>{{ _("Status: {0}").format(error_code) }}</p>
-{% endif %}
-<script>
-	frappe.ready(function() {
-		if (window.location.hash || window.location.href.includes('/app')) {
-			localStorage.setItem('session_last_route', window.location.pathname);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssureAi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .error-container {
+            max-width: 600px;
+            text-align: center;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .error-title {
+            font-size: 2em;
+            color: #dc3545;
+        }
+        .error-message {
+            font-size: 1.2em;
+            margin-top: 10px;
+			margin-bottom: 30px;
+            color: #6c757d;
+        }
+        .back-button {
+            margin-top: 20px;
+        }
+		.button{
+		    text-decoration: none;
+			background-color: #0080a2;
+			color:white;
+			padding:10px 20px;
+			border-radius:20px;
 		}
-
-		$('.btn-primary').focus();
-	});
-</script>
-{% endblock %}
+    </style>
+</head>
+<body>
+    <div class="error-container">
+	<img src="data:image/svg+xml,%3C?xml%20version=%271.0%27%20encoding=%27UTF-8%27%20standalone=%27no%27?%3E%20%3Csvg%20xmlns:dc=%27http://purl.org/dc/elements/1.1/%27%20xmlns:cc=%27http://creativecommons.org/ns%23%27%20xmlns:rdf=%27http://www.w3.org/1999/02/22-rdf-syntax-ns%23%27%20xmlns:svg=%27http://www.w3.org/2000/svg%27%20xmlns=%27http://www.w3.org/2000/svg%27%20xmlns:sodipodi=%27http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd%27%20xmlns:inkscape=%27http://www.inkscape.org/namespaces/inkscape%27%20version=%271.1%27%20id=%27svg2%27%20xml:space=%27preserve%27%20width=%272132.0532%27%20height=%27334.29333%27%20viewBox=%270%200%202132.0532%20334.29333%27%20sodipodi:docname=%27assure%20logo%20workfile%2028-07-2020%20(3).eps%27%3E%3Cmetadata%20id=%27metadata8%27%3E%3Crdf:RDF%3E%3Ccc:Work%20rdf:about=%27%27%3E%3Cdc:format%3Eimage/svg+xml%3C/dc:format%3E%3Cdc:type%20rdf:resource=%27http://purl.org/dc/dcmitype/StillImage%27%20/%3E%3C/cc:Work%3E%3C/rdf:RDF%3E%3C/metadata%3E%3Cdefs%20id=%27defs6%27%20/%3E%3Csodipodi:namedview%20pagecolor=%27%23ffffff%27%20bordercolor=%27%23666666%27%20borderopacity=%271%27%20objecttolerance=%2710%27%20gridtolerance=%2710%27%20guidetolerance=%2710%27%20inkscape:pageopacity=%270%27%20inkscape:pageshadow=%272%27%20inkscape:window-width=%27640%27%20inkscape:window-height=%27480%27%20id=%27namedview4%27%20/%3E%3Cg%20id=%27g10%27%20inkscape:groupmode=%27layer%27%20inkscape:label=%27ink_ext_XXXXXX%27%20transform=%27matrix(1.3333333,0,0,-1.3333333,0,334.29333)%27%3E%3Cg%20id=%27g12%27%20transform=%27scale(0.1)%27%3E%3Cpath%20d=%27M%20493.098,267.449%20H%203155.39%20L%201824.24,2084.25%20Z%20M%203648.49,17.4492%20H%200%20L%201824.24,2507.25%203648.49,17.4492%27%20style=%27fill:%233380a7;fill-opacity:1;fill-rule:nonzero;stroke:none%27%20id=%27path14%27%20/%3E%3Cpath%20d=%27m%201196.83,607.891%20h%201263.83%20l%20-631.91,862.469%20z%20m%201618.86,-180%20H%20841.797%20L%201828.75,1774.92%202815.69,427.891%27%20style=%27fill:%2354c5b6;fill-opacity:1;fill-rule:nonzero;stroke:none%27%20id=%27path16%27%20/%3E%3Cpath%20d=%27M%201828.75,1210.29%201496.77,757.199%20h%20663.95%20z%27%20style=%27fill:%23606264;fill-opacity:1;fill-rule:nonzero;stroke:none%27%20id=%27path18%27%20/%3E%3Cpath%20d=%27m%2014519.3,462.539%20-332,-453.08978%20h%20664%20z%27%20style=%27fill:%2354c5b6;fill-opacity:1;fill-rule:nonzero;stroke:none%27%20id=%27path20%27%20/%3E%3Cpath%20d=%27m%203919.06,0%20v%20213.648%20h%201257.23%20c%20120.5,0%20180.78,44.493%20180.78,133.532%20v%20182.832%20c%200,89.008%20-60.28,133.527%20-180.78,133.527%20h%20-850.48%20c%20-82.17,0%20-152.02,8.531%20-209.54,25.68%20-57.52,17.101%20-104.45,41.09%20-140.72,71.902%20-36.3,30.82%20-62.65,67.438%20-79.09,109.899%20-16.43,42.441%20-24.65,89.679%20-24.65,141.75%20V%201097%20c%200,52.03%208.22,99.27%2024.65,141.74%2016.44,42.44%2042.79,79.09%2079.09,109.91%2036.27,30.81%2083.2,54.76%20140.72,71.9%2057.52,17.11%20127.37,25.67%20209.54,25.67%20H%205550.17%20V%201232.58%20H%204325.81%20c%20-120.53,0%20-180.78,-44.52%20-180.78,-133.53%20v%20-88.34%20c%200,-89.038%2060.25,-133.519%20180.78,-133.519%20h%20850.48%20c%2082.17,0%20152.02,-8.57%20209.54,-25.679%2057.52,-17.141%20104.41,-41.09%20140.72,-71.91%2036.27,-30.813%2062.65,-67.473%2079.09,-109.903%2016.43,-42.461%2024.65,-89.719%2024.65,-141.75%20V%20349.23%20c%200,-52.058%20-8.22,-99.3%20-24.65,-141.75%20C%205589.2,165.02%205562.82,128.398%205526.55,97.582%205490.24,66.7695%205443.35,42.7891%205385.83,25.6914%205328.31,8.53906%205258.46,0%205176.29,0%20H%203919.06%27%20style=%27fill:%23606264;fill-opacity:1;fill-rule:nonzero;stroke:none%27%20id=%27path22%27%20/%3E%3Cpath%20d=%27M%205872.67,0%20V%20213.648%20H%207129.9%20c%20120.5,0%20180.78,44.493%20180.78,133.532%20v%20182.832%20c%200,89.008%20-60.28,133.527%20-180.78,133.527%20h%20-850.48%20c%20-82.17,0%20-152.01,8.531%20-209.54,25.68%20-57.52,17.101%20-104.45,41.09%20-140.71,71.902%20-36.31,30.82%20-62.66,67.438%20-79.1,109.899%20-16.43,42.441%20-24.65,89.679%20-24.65,141.75%20V%201097%20c%200,52.03%208.22,99.27%2024.65,141.74%2016.44,42.44%2042.79,79.09%2079.1,109.91%2036.26,30.81%2083.19,54.76%20140.71,71.9%2057.53,17.11%20127.37,25.67%20209.54,25.67%20H%207503.78%20V%201232.58%20H%206279.42%20c%20-120.53,0%20-180.77,-44.52%20-180.77,-133.53%20v%20-88.34%20c%200,-89.038%2060.24,-133.519%20180.77,-133.519%20h%20850.48%20c%2082.18,0%20152.03,-8.57%20209.55,-25.679%2057.52,-17.141%20104.41,-41.09%20140.7,-71.91%2036.29,-30.813%2062.66,-67.473%2079.1,-109.903%2016.43,-42.461%2024.65,-89.719%2024.65,-141.75%20V%20349.23%20c%200,-52.058%20-8.22,-99.3%20-24.65,-141.75%20-16.44,-42.46%20-42.81,-79.082%20-79.1,-109.898%20C%207443.86,66.7695%207396.97,42.7891%207339.45,25.6914%207281.93,8.53906%207212.08,0%207129.9,0%20H%205872.67%27%20style=%27fill:%23606264;fill-opacity:1;fill-rule:nonzero;stroke:none%27%20id=%27path24%27%20/%3E%3Cpath%20d=%27m%208255.64,0%20c%20-82.17,0%20-152.02,8.53906%20-209.54,25.6914%20-57.52,17.0977%20-104.44,41.0781%20-140.71,71.8906%20-36.31,30.816%20-62.66,67.438%20-79.1,109.898%20-16.43,42.45%20-24.65,89.692%20-24.65,141.75%20v%201096.99%20h%20273.22%20V%20347.18%20c%200,-89.039%2060.25,-133.532%20180.78,-133.532%20h%20897.72%20c%20120.5,0%20180.79,44.493%20180.79,133.532%20v%201099.04%20h%20273.22%20V%20349.23%20c%200,-52.058%20-5.14,-99.3%20-15.41,-141.75%20-10.28,-42.46%20-30.14,-79.082%20-59.57,-109.898%20C%209502.92,66.7695%209462.54,42.7891%209411.19,25.6914%209359.82,8.53906%209293.06,0%209210.88,0%20h%20-955.24%27%20style=%27fill:%23606264;fill-opacity:1;fill-rule:nonzero;stroke:none%27%20id=%27path26%27%20/%3E%3Cpath%20d=%27m%2011277.5,1099.05%20c%200,89.01%20-60.3,133.53%20-180.8,133.53%20h%20-955.2%20V%20858.699%20h%20955.2%20c%20120.5,0%20180.8,44.481%20180.8,133.531%20z%20M%2011242.6,0%20l%20-339,645.051%20h%20-762.1%20V%200%20h%20-273.26%20v%201446.22%20h%201228.46%20c%2082.2,0%20152,-8.56%20209.6,-25.67%2057.5,-17.14%20104.4,-41.09%20140.7,-71.9%2036.2,-30.82%2062.6,-67.47%2079.1,-109.91%2016.4,-42.47%2024.6,-89.71%2024.6,-141.74%20V%20994.281%20c%200,-93.152%20-27.4,-170.859%20-82.2,-233.16%20-54.8,-62.34%20-146.5,-99.633%20-275.2,-111.961%20L%2011534.3,0%20h%20-291.7%27%20style=%27fill:%23606264;fill-opacity:1;fill-rule:nonzero;stroke:none%27%20id=%27path28%27%20/%3E%3Cpath%20d=%27m%2011770.5,0%20v%201446.22%20h%201487.3%20V%201232.58%20H%2012043.7%20V%20871.02%20h%201152.5%20V%20657.379%20H%2012043.7%20V%20213.648%20h%201214.1%20V%200%20h%20-1487.3%27%20style=%27fill:%23606264;fill-opacity:1;fill-rule:nonzero;stroke:none%27%20id=%27path30%27%20/%3E%3Cpath%20d=%27M%2015265.2,4.89063%2014519.5,1169.68%2013761.5,4.89063%20h%20-304.1%20L%2014418.8,1451.12%20h%20199.3%20L%2015573.4,4.89063%20h%20-308.2%27%20style=%27fill:%23606264;fill-opacity:1;fill-rule:nonzero;stroke:none%27%20id=%27path32%27%20/%3E%3Cpath%20d=%27M%2015717.2,4.89063%20V%201451.12%20h%20273.2%20V%204.89063%20h%20-273.2%27%20style=%27fill:%23606264;fill-opacity:1;fill-rule:nonzero;stroke:none%27%20id=%27path34%27%20/%3E%3C/g%3E%3C/g%3E%3C/svg%3E" width="400" height="400"
+	/>
+        <h1 class="error-title">{{ title or _("An Error Occurred") }}</h1>
+        <p class="error-message">{{ message or _("") }}</p>
+		<a class="button" href="{{ siteURL }}">Go Back Home <i class="fa fa-home"></i></a>
+    </div>
+	<p style="display: none;">{{ traceback }}</p>
+</body>
+</html>
