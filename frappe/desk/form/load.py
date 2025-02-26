@@ -14,6 +14,7 @@ from frappe.desk.form.document_follow import is_document_followed
 from frappe.model.utils.user_settings import get_user_settings
 from frappe.permissions import get_doc_permissions
 from frappe.utils.data import cstr
+from frappe.utils.html_utils import clean_email_html
 
 if typing.TYPE_CHECKING:
 	from frappe.model.document import Document
@@ -38,7 +39,7 @@ def getdoc(doctype, name, user=None):
 
 	if not doc.has_permission("read"):
 		frappe.flags.error_message = _("Insufficient Permission for {0}").format(
-			frappe.bold(doctype + " " + name)
+			frappe.bold(_(doctype) + " " + name)
 		)
 		raise frappe.PermissionError(("read", doctype, name))
 
@@ -258,6 +259,7 @@ def _get_communications(doctype, name, start=0, limit=20):
 	communications = get_communication_data(doctype, name, start, limit)
 	for c in communications:
 		if c.communication_type in ("Communication", "Automated Message"):
+			clean_email_html(c.content)
 			c.attachments = json.dumps(
 				frappe.get_all(
 					"File",
@@ -421,7 +423,9 @@ def get_title_values_for_link_and_dynamic_link_fields(doc, link_fields=None):
 		link_fields = meta.get_link_fields() + meta.get_dynamic_link_fields()
 
 	for field in link_fields:
-		if not doc.get(field.fieldname):
+		link_docname = getattr(doc, field.fieldname, None)
+
+		if not link_docname:
 			continue
 
 		doctype = field.options if field.fieldtype == "Link" else doc.get(field.options)
@@ -430,10 +434,8 @@ def get_title_values_for_link_and_dynamic_link_fields(doc, link_fields=None):
 		if not meta or not (meta.title_field and meta.show_title_field_in_link):
 			continue
 
-		link_title = frappe.db.get_value(
-			doctype, doc.get(field.fieldname), meta.title_field, cache=True, order_by=None
-		)
-		link_titles.update({doctype + "::" + doc.get(field.fieldname): link_title})
+		link_title = frappe.db.get_value(doctype, link_docname, meta.title_field, cache=True, order_by=None)
+		link_titles.update({doctype + "::" + link_docname: link_title})
 
 	return link_titles
 
