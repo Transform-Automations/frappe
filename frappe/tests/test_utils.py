@@ -24,7 +24,6 @@ from frappe.tests.utils import FrappeTestCase, MockedRequestTestCase, change_set
 from frappe.utils import (
 	ceil,
 	dict_to_str,
-	evaluate_filters,
 	execute_in_shell,
 	floor,
 	flt,
@@ -35,6 +34,7 @@ from frappe.utils import (
 	get_site_info,
 	get_sites,
 	get_url,
+	is_valid_iban,
 	money_in_words,
 	parse_timedelta,
 	random_string,
@@ -57,6 +57,7 @@ from frappe.utils.data import (
 	cint,
 	cstr,
 	duration_to_seconds,
+	evaluate_filters,
 	expand_relative_urls,
 	get_datetime,
 	get_first_day_of_week,
@@ -208,6 +209,20 @@ class TestFilters(FrappeTestCase):
 
 		for filter, expected_result in test_cases:
 			self.assertEqual(evaluate_filters(doc, filter), expected_result, msg=f"{filter}")
+
+	def test_timespan(self):
+		doc = {
+			"doctype": "User",
+			"last_password_reset_date": getdate(),
+		}
+		self.assertTrue(evaluate_filters(doc, [("last_password_reset_date", "Timespan", "today")]))
+		self.assertFalse(evaluate_filters(doc, [("last_password_reset_date", "Timespan", "last year")]))
+
+		doc = {
+			"doctype": "User",
+			"last_password_reset_date": None,
+		}
+		self.assertFalse(evaluate_filters(doc, [("last_password_reset_date", "Timespan", "today")]))
 
 
 class TestMoney(FrappeTestCase):
@@ -437,6 +452,26 @@ class TestValidationUtils(FrappeTestCase):
 		for name in invalid_names:
 			self.assertRaises(frappe.InvalidNameError, validate_name, name, True)
 
+	def test_validate_iban(self):
+		valid_ibans = [
+			"GB82 WEST 1234 5698 7654 32",
+			"DE91 1000 0000 0123 4567 89",
+			"FR76 3000 6000 0112 3456 7890 189",
+		]
+
+		invalid_ibans = [
+			# wrong checksum (3rd place)
+			"GB72 WEST 1234 5698 7654 32",
+			"DE81 1000 0000 0123 4567 89",
+			"FR66 3000 6000 0112 3456 7890 189",
+		]
+
+		for iban in valid_ibans:
+			self.assertTrue(is_valid_iban(iban))
+
+		for not_iban in invalid_ibans:
+			self.assertFalse(is_valid_iban(not_iban))
+
 
 class TestImage(FrappeTestCase):
 	def test_strip_exif_data(self):
@@ -630,6 +665,16 @@ class TestDateUtils(FrappeTestCase):
 	def test_timesmap_utils(self):
 		self.assertEqual(get_year_ending(date(2021, 1, 1)), date(2021, 12, 31))
 		self.assertEqual(get_year_ending(date(2021, 1, 31)), date(2021, 12, 31))
+
+	@given(st.datetimes())
+	def test_get_datetime(self, original):
+		parsed = get_datetime(str(original))
+		self.assertEqual(parsed, original)
+
+	@given(st.datetimes(timezones=st.timezones()))
+	def test_get_datetime_tz_aware(self, original):
+		parsed = get_datetime(str(original))
+		self.assertEqual(parsed, original)
 
 	def test_pretty_date(self):
 		from frappe import _

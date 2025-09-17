@@ -19,6 +19,8 @@ from frappe.model.utils import is_virtual_doctype
 from frappe.utils import add_user_info, cint, format_duration
 from frappe.utils.data import sbool
 
+DISALLOWED_PARAMS = ("cmd", "data", "ignore_permissions", "view", "user", "csrf_token", "join")
+
 
 @frappe.whitelist()
 @frappe.read_only()
@@ -63,13 +65,9 @@ def get_count() -> int:
 		fieldname = f"{distinct}`tab{args.doctype}`.name"
 		args.order_by = None
 
-		if args.limit:
-			args.fields = [fieldname]
-			partial_query = execute(**args, run=0)
-			count = frappe.db.sql(f"""select count(*) from ( {partial_query} ) p""")[0][0]
-		else:
-			args.fields = [f"count({fieldname}) as total_count"]
-			count = execute(**args)[0].get("total_count")
+		args.fields = [fieldname]
+		partial_query = execute(**args, run=0)
+		count = frappe.db.sql(f"""select count(*) from ( {partial_query} ) p""")[0][0]
 
 	return count
 
@@ -224,8 +222,9 @@ def update_wildcard_field_param(data):
 
 
 def clean_params(data):
-	for param in ("cmd", "data", "ignore_permissions", "view", "user", "csrf_token", "join"):
-		data.pop(param, None)
+	for param in DISALLOWED_PARAMS:
+		if param in data:
+			del data[param]
 
 
 def parse_json(data):
@@ -291,7 +290,7 @@ def compress(data, args=None):
 	return {"keys": keys, "values": values, "user_info": user_info}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST", "PUT"])
 def save_report(name, doctype, report_settings):
 	"""Save reports of type Report Builder from Report View"""
 
@@ -321,7 +320,7 @@ def save_report(name, doctype, report_settings):
 	return report.name
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST", "DELETE"])
 def delete_report(name):
 	"""Delete reports of type Report Builder from Report View"""
 
@@ -405,7 +404,7 @@ def export_query():
 				_(value) if translatable_fields[idx] else value for idx, value in enumerate(row)
 			]
 			processed_data.append(processed_row)
-			data.extend(processed_data)
+		data.extend(processed_data)
 
 	data = handle_duration_fieldtype_values(doctype, data, db_query.fields)
 
@@ -531,7 +530,7 @@ def parse_field(field: str) -> tuple[str | None, str]:
 	return None, key.strip("`")
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST", "DELETE"])
 def delete_items():
 	"""delete selected items"""
 	import json

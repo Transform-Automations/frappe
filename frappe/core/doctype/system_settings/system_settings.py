@@ -2,6 +2,7 @@
 # License: MIT. See LICENSE
 
 import frappe
+import frappe.defaults
 from frappe import _
 from frappe.model import no_value_fields
 from frappe.model.document import Document
@@ -70,6 +71,7 @@ class SystemSettings(Document):
 		max_auto_email_report_per_user: DF.Int
 		max_file_size: DF.Int
 		minimum_password_score: DF.Literal["2", "3", "4"]
+		max_report_rows: DF.Int
 		number_format: DF.Literal[
 			"#,###.##",
 			"#.###,##",
@@ -151,9 +153,8 @@ class SystemSettings(Document):
 
 		social_login_enabled = frappe.db.exists("Social Login Key", {"enable_social_login": 1})
 		ldap_enabled = frappe.db.get_single_value("LDAP Settings", "enabled")
-		login_with_email_link_enabled = frappe.db.get_single_value("System Settings", "login_with_email_link")
 
-		if not (social_login_enabled or ldap_enabled or login_with_email_link_enabled):
+		if not (social_login_enabled or ldap_enabled or self.login_with_email_link):
 			frappe.throw(
 				_(
 					"Please enable atleast one Social Login Key or LDAP or Login With Email Link before disabling username/password based login."
@@ -219,3 +220,8 @@ def load():
 			defaults[df.fieldname] = all_defaults.get(df.fieldname)
 
 	return {"timezones": get_all_timezones(), "defaults": defaults}
+
+
+def sync_system_settings():
+	if frappe.db.get_single_value("System Settings", "currency") is None:
+		frappe.db.set_single_value("System Settings", "currency", frappe.defaults.get_defaults()["currency"])

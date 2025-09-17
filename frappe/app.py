@@ -24,6 +24,7 @@ import frappe.utils.response
 from frappe import _
 from frappe.auth import SAFE_HTTP_METHODS, UNSAFE_HTTP_METHODS, HTTPRequest, validate_auth
 from frappe.middlewares import StaticDataMiddleware
+from frappe.permissions import handle_does_not_exist_error
 from frappe.utils import CallbackManager, cint, get_site_name
 from frappe.utils.data import escape_html
 from frappe.utils.deprecations import deprecation_warning
@@ -175,14 +176,13 @@ def init_request(request):
 		# site does not exist
 		raise NotFound
 
+	frappe.connect(set_admin_as_user=False)
 	if frappe.local.conf.maintenance_mode:
-		frappe.connect()
 		if frappe.local.conf.allow_reads_during_maintenance:
 			setup_read_only_mode()
 		else:
 			raise frappe.SessionStopped("Session Stopped")
-	else:
-		frappe.connect(set_admin_as_user=False)
+
 	if request.path.startswith("/api/method/upload_file"):
 		from frappe.core.api.file import get_max_file_size
 
@@ -309,6 +309,7 @@ def make_form_dict(request: Request):
 		frappe.throw(_("Invalid request arguments"))
 
 
+@handle_does_not_exist_error
 def handle_exception(e):
 	response = None
 	http_status_code = getattr(e, "http_status_code", 500)

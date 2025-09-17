@@ -32,10 +32,7 @@ def handle_rpc_call(method: str, doctype: str | None = None):
 		module = load_doctype_module(doctype)
 		method = module.__name__ + "." + method
 
-	for hook in reversed(frappe.get_hooks("override_whitelisted_methods", {}).get(method, [])):
-		# override using the last hook
-		method = hook
-		break
+	method = frappe.override_whitelisted_method(method)
 
 	# via server script
 	server_script = get_server_script_map().get("_api", {}).get(method)
@@ -91,7 +88,12 @@ def count(doctype: str) -> int:
 def create_doc(doctype: str):
 	data = frappe.form_dict
 	data.pop("doctype", None)
-	return frappe.new_doc(doctype, **data).insert()
+	doc = frappe.new_doc(doctype, **data)
+
+	if (name := data.get("name")) and isinstance(name, str | int):
+		doc.flags.name_set = True
+
+	return doc.insert()
 
 
 def copy_doc(doctype: str, name: str, ignore_no_copy: bool = True):
@@ -112,6 +114,7 @@ def update_doc(doctype: str, name: str):
 	data.pop("flags", None)
 	doc.update(data)
 	doc.save()
+	doc.apply_fieldlevel_read_permissions()
 
 	# check for child table doctype
 	if doc.get("parenttype"):

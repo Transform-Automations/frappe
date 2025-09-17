@@ -20,6 +20,7 @@ from frappe.desk.notifications import clear_notifications
 from frappe.model.document import Document
 from frappe.query_builder import DocType
 from frappe.rate_limiter import rate_limit
+from frappe.sessions import clear_sessions
 from frappe.utils import (
 	cint,
 	escape_html,
@@ -31,8 +32,9 @@ from frappe.utils import (
 	now_datetime,
 	today,
 )
-from frappe.utils.data import sha256_hash, strip_html
+from frappe.utils.data import sha256_hash
 from frappe.utils.deprecations import deprecated
+from frappe.utils.html_utils import sanitize_html
 from frappe.utils.password import check_password, get_password_reset_limit
 from frappe.utils.password import update_password as _update_password
 from frappe.utils.user import get_system_managers
@@ -256,12 +258,9 @@ class User(Document):
 		return self.name == frappe.session.user
 
 	def clean_name(self):
-		if self.first_name:
-			self.first_name = strip_html(self.first_name)
-		if self.middle_name:
-			self.middle_name = strip_html(self.middle_name)
-		if self.last_name:
-			self.last_name = strip_html(self.last_name)
+		for field in ("first_name", "middle_name", "last_name"):
+			if field_value := self.get(field):
+				self.set(field, sanitize_html(field_value, always_sanitize=True))
 
 	def set_full_name(self):
 		self.full_name = " ".join(filter(None, [self.first_name, self.last_name]))
@@ -385,7 +384,7 @@ class User(Document):
 		if password_expired:
 			url = "/update-password?key=" + key + "&password_expired=true"
 
-		link = get_url(url)
+		link = get_url(url, allow_header_override=False)
 		if send_email:
 			self.password_reset_mail(link)
 
@@ -585,6 +584,9 @@ class User(Document):
 
 		# set email
 		frappe.db.set_value("User", new_name, "email", new_name)
+
+		clear_sessions(user=old_name, force=True)
+		clear_sessions(user=new_name, force=True)
 
 	def append_roles(self, *roles):
 		"""Add roles to user"""
@@ -839,6 +841,8 @@ def update_password(
 
 	user_doc, redirect_url = reset_user_data(user)
 
+	user_doc.validate_reset_password()
+
 	# get redirect url from cache
 	redirect_to = frappe.cache.hget("redirect_after_login", user)
 	if redirect_to:
@@ -996,7 +1000,7 @@ def sign_up(email: str, full_name: str, redirect_to: str) -> tuple[int, str]:
 		user.insert()
 
 		# set default signup role as per Portal Settings
-		default_role = frappe.db.get_single_value("Portal Settings", "default_role")
+		default_role = frappe.get_single_value("Portal Settings", "default_role")
 		if default_role:
 			user.add_roles(default_role)
 
@@ -1289,7 +1293,7 @@ def generate_keys(user: str):
 	user_details.api_secret = api_secret
 	user_details.save()
 
-	return {"api_secret": api_secret}
+	return {"api_key": user_details.api_key, "api_secret": api_secret}
 
 
 @frappe.whitelist()

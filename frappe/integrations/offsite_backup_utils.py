@@ -16,6 +16,8 @@ def send_email(success, service_name, doctype, email_field, error_status=None):
 			f"{service_name}: Failed to send backup status email",
 		)
 		return
+	from frappe.utils import get_site_name
+	site_name = get_site_name(frappe.local.site)
 
 	from frappe.utils import get_site_name
 	site_name = get_site_name(frappe.local.site)
