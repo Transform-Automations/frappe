@@ -19,6 +19,9 @@ def send_email(success, service_name, doctype, email_field, error_status=None):
 	from frappe.utils import get_site_name
 	site_name = get_site_name(frappe.local.site)
 
+	from frappe.utils import get_site_name
+	site_name = get_site_name(frappe.local.site)
+
 	if success:
 		if not frappe.db.get_single_value(doctype, "send_email_for_successful_backup"):
 			return
